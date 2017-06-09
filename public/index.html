@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<style>
+#map {
+  height: 100%;
+  width: 100%;
+}
+body{
+  height: 100%;
+}
+html{
+  height: 100%;
+}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+
+<!-- <script src="centreville.js"></script> -->
+<script src="firebase-app.js"></script>
+<script src="firebase-database.js"></script>
+<!-- <script type="text/javascript" src="date.js"></script> -->
+
+
+<script>
+
+function log(e){ console.log(e) }
+
+var config = {
+  apiKey: "AIzaSyBBTr8Y6vt7VTLKRUdZ2QE6rdYH4Ls7lN0",
+  authDomain: "gumtree-hacker.firebaseapp.com",
+  databaseURL: "https://gumtree-hacker.firebaseio.com",
+  projectId: "gumtree-hacker",
+  storageBucket: "gumtree-hacker.appspot.com",
+  messagingSenderId: "846484105723"
+};
+
+// var config = {
+//     apiKey: "AIzaSyDD6JfW3qPYs2Z6KnbLeETj2hqTLjp0i1A",
+//     authDomain: "carbonimpact-7eac0.firebaseapp.com",
+//     databaseURL: "https://carbonimpact-7eac0.firebaseio.com",
+//     storageBucket: "carbonimpact-7eac0.appspot.com",
+//     messagingSenderId: "781862655051"
+// };
+firebase.initializeApp(config);
+
+var database = firebase.database();
+
+var flats = [];
+var krakow = {lat: 50.0646501, lng: 19.9449799};
+
+var listenForFlats = database.ref('flats');
+
+listenForFlats.once('value').then(function(snapshot) {
+  log("flats arrived")
+  var fl = snapshot.val();
+  // console.log(fl)
+  for(var i in fl) {
+      flats.unshift(fl[i]);
+  }
+  var bezlocation = [];
+  var bezText = "";
+
+  flats.forEach(f => {
+    // log(f)
+    var position,
+        icon;
+    var streets = Object.keys(f.streets || {});
+    console.log(Math.abs(f.lat-krakow.lat)+Math.abs(f.lng-krakow.lng))
+    if(Math.abs(f.lat-krakow.lat)+Math.abs(f.lng-krakow.lng) > 0.0000002){
+      position = {lat: parseFloat(f.lat), lng: parseFloat(f.lng)} ;
+      icon = redIcon;
+    } else if(streets.length) {
+      position = f.streets[streets.pop()];
+      icon = orangeIcon;
+    } else {
+      bezlocation.push(f)
+      bezText = bezText + textwind(f);
+      return true;
+    }
+
+    var marker = new google.maps.Marker({
+      position: position,
+      map: map,
+      title: f.title,
+      icon: icon
+    });
+
+    var infowindow = new google.maps.InfoWindow({
+          content: textwind(f)
+    });
+
+    marker.addListener('click', function() {
+      infowindow.open(map, marker);
+    });
+
+  })
+
+
+  var marker = new google.maps.Marker({
+    position: krakow,
+    map: map,
+    title: "The others",
+    icon: blueIcon
+  });
+
+  var infowindow = new google.maps.InfoWindow({
+        content: bezText
+  });
+
+  marker.addListener('click', function() {
+    infowindow.open(map, marker);
+  });
+
+    // updateStarCount(postElement, snapshot.val());
+    // debugger;
+});
+var map;
+function initMap() {
+  log("initMap")
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 14,
+    center: krakow
+  });
+
+
+// 50.062088,19.966669499999966
+}
+
+function textwind(f){
+  return "<b>" + f.title + "</b><br>" + f.price + '<br><a href="'+ f.href +'" target="_blank">Link</a><br>'
+}
+
+var orangeIcon = "http://maps.google.com/mapfiles/ms/icons/orange-dot.png";
+var redIcon = "http://maps.google.com/mapfiles/ms/icons/red-dot.png";
+var blueIcon = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png";
+
+
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBG0dOVS_ZhMTnoprt3-pxQUVlpgalraqM&callback=initMap"></script>
+
+</body>
+</html>
